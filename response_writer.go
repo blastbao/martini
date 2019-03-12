@@ -8,18 +8,22 @@ import (
 )
 
 // ResponseWriter is a wrapper around http.ResponseWriter that provides extra information about
-// the response. It is recommended that middleware handlers use this construct to wrap a responsewriter
+// the response. 
+// It is recommended that middleware handlers use this construct to wrap a responsewriter
 // if the functionality calls for it.
 type ResponseWriter interface {
+
 	http.ResponseWriter
 	http.Flusher
 	http.Hijacker
+
 	// Status returns the status code of the response or 0 if the response has not been written.
 	Status() int
 	// Written returns whether or not the ResponseWriter has been written.
 	Written() bool
 	// Size returns the size of the response body.
 	Size() int
+
 	// Before allows for a function to be called before the ResponseWriter has been written to. This is
 	// useful for setting headers or any other operations that must happen before a response has been written.
 	Before(BeforeFunc)
@@ -27,6 +31,8 @@ type ResponseWriter interface {
 
 // BeforeFunc is a function that is called before the ResponseWriter has been written to.
 type BeforeFunc func(ResponseWriter)
+
+
 
 // NewResponseWriter creates a ResponseWriter that wraps an http.ResponseWriter
 func NewResponseWriter(rw http.ResponseWriter) ResponseWriter {
@@ -36,6 +42,8 @@ func NewResponseWriter(rw http.ResponseWriter) ResponseWriter {
 	}
 	return &newRw
 }
+
+
 
 type responseWriter struct {
 	http.ResponseWriter

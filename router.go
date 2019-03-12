@@ -56,15 +56,17 @@ type group struct {
 	handlers []Handler
 }
 
-// NewRouter creates a new Router instance.
-// If you aren't using ClassicMartini, then you can add Routes as a
-// service with:
+
+
+
+
+
+// NewRouter 创建一个路由实例
+// 如果你不使用 ClassicMartini, 你需要手动注册路由（ClassicMartini会自动为你做这个）:
 //
 //	m := martini.New()
 //	r := martini.NewRouter()
 //	m.MapTo(r, (*martini.Routes)(nil))
-//
-// If you are using ClassicMartini, then this is done for you.
 func NewRouter() Router {
 	return &router{notFounds: []Handler{http.NotFound}, groups: make([]group, 0)}
 }
@@ -115,6 +117,8 @@ func (r *router) Handle(res http.ResponseWriter, req *http.Request, context Cont
 	bestMatch := NoMatch
 	var bestVals map[string]string
 	var bestRoute *route
+
+	// 查找最match的路由规则
 	for _, route := range r.getRoutes() {
 		match, vals := route.Match(req.Method, req.URL.Path)
 		if match.BetterThan(bestMatch) {
@@ -126,17 +130,19 @@ func (r *router) Handle(res http.ResponseWriter, req *http.Request, context Cont
 			}
 		}
 	}
+
+	 //如果找到则执行其handle
 	if bestMatch != NoMatch {
 		params := Params(bestVals)
 		context.Map(params)
-		bestRoute.Handle(context, res)
+		bestRoute.Handle(context, res) //其实就是建立一个路由上下文,routeContext，注入context和路由规则，然后run
 		return
 	}
 
 	// no routes exist, 404
 	c := &routeContext{context, 0, r.notFounds}
 	context.MapTo(c, (*Context)(nil))
-	c.run()
+	c.run() // 设置上下文为notfounds方法
 }
 
 func (r *router) NotFound(handler ...Handler) {
@@ -157,9 +163,9 @@ func (r *router) addRoute(method string, pattern string, handlers []Handler) *ro
 		handlers = h
 	}
 
-	route := newRoute(method, pattern, handlers)
+	route := newRoute(method, pattern, handlers) //根据加入的pattern来新建路由规则
 	route.Validate()
-	r.appendRoute(route)
+	r.appendRoute(route) //将新生成的路由规则加入路由表
 	return route
 }
 
@@ -402,6 +408,8 @@ func (r *routeContext) Next() {
 	r.run()
 }
 
+
+
 func (r *routeContext) run() {
 	for r.index < len(r.handlers) {
 		handler := r.handlers[r.index]
@@ -413,10 +421,13 @@ func (r *routeContext) run() {
 
 		// if the handler returned something, write it to the http response
 		if len(vals) > 0 {
-			ev := r.Get(reflect.TypeOf(ReturnHandler(nil)))
+			//返回值函数
+			ev := r.Get(reflect.TypeOf(ReturnHandler(nil))) ) // ReturnHandler这个类型就是刚开始 martini.New() 中设置的 defaultReturnHandler()
 			handleReturn := ev.Interface().(ReturnHandler)
 			handleReturn(r, vals)
 		}
+
+
 
 		if r.Written() {
 			return
